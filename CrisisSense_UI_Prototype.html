@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrisisSense — UI Prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0A0D12;
+  --surface: #111620;
+  --surface2: #171D28;
+  --surface3: #1E2535;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text: #E8EDF5;
+  --text2: #8B95A8;
+  --text3: #556070;
+  --red: #FF3B4E;      --red-dim: rgba(255,59,78,0.12);
+  --orange: #FF7A30;   --orange-dim: rgba(255,122,48,0.12);
+  --yellow: #F5C842;   --yellow-dim: rgba(245,200,66,0.12);
+  --green: #22D77A;    --green-dim: rgba(34,215,122,0.12);
+  --blue: #3B8BFF;     --blue-dim: rgba(59,139,255,0.12);
+  --teal: #00C9B8;     --teal-dim: rgba(0,201,184,0.12);
+  --purple: #A259FF;   --purple-dim: rgba(162,89,255,0.12);
+  --phone-w: 390px;
+  --phone-h: 844px;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+body {
+  background: #060810;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px 64px;
+  gap: 36px;
+}
+
+.page-header { text-align: center; max-width: 640px; }
+.page-header h1 { font-family:'Syne',sans-serif; font-size:13px; font-weight:600; letter-spacing:.15em; text-transform:uppercase; color:var(--teal); margin-bottom:12px; }
+.page-header h2 { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; color:var(--text); margin-bottom:8px; letter-spacing:-.02em; }
+.page-header p { font-size:14px; color:var(--text2); line-height:1.6; }
+.b4a-note { display:inline-flex; align-items:center; gap:6px; background:rgba(0,201,184,0.08); border:1px solid rgba(0,201,184,0.25); border-radius:20px; padding:5px 14px; font-size:12px; color:var(--teal); margin-top:14px; font-weight:500; }
+
+.screen-nav { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; max-width:700px; }
+.snav-pill { padding:7px 14px; border-radius:20px; font-size:11px; font-weight:700; font-family:'Syne',sans-serif; letter-spacing:.05em; text-transform:uppercase; cursor:pointer; border:1px solid var(--border2); background:var(--surface); color:var(--text3); transition:all .15s; }
+.snav-pill:hover { color:var(--text2); border-color:rgba(255,255,255,0.2); }
+.snav-pill.active { background:var(--teal); border-color:var(--teal); color:#000; }
+
+.phone-wrap { display:flex; flex-direction:column; align-items:center; gap:14px; }
+.screen-label { font-family:'Syne',sans-serif; font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); }
+
+.phone {
+  width:var(--phone-w); height:var(--phone-h);
+  background:var(--bg); border-radius:44px;
+  border:1.5px solid rgba(255,255,255,0.1);
+  overflow:hidden; position:relative;
+  box-shadow: 0 0 0 6px #0D1018, 0 0 0 8px rgba(255,255,255,0.05), 0 60px 120px rgba(0,0,0,0.8), 0 0 80px rgba(0,201,184,0.04);
+  flex-shrink:0;
+}
+.dynamic-island { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:120px; height:34px; background:#000; border-radius:20px; z-index:100; display:flex; align-items:center; justify-content:center; gap:8px; }
+.di-cam { width:10px; height:10px; background:#1a1a1a; border-radius:50%; border:1px solid #222; }
+.di-dot { width:6px; height:6px; background:#1A2535; border-radius:50%; }
+.screen-content { height:100%; overflow:hidden; display:flex; flex-direction:column; }
+.screen-transition { position:absolute; inset:0; background:var(--bg); opacity:0; pointer-events:none; z-index:50; transition:opacity .18s; }
+.screen-transition.flash { opacity:1; }
+
+/* Every screen div needs these when shown */
+.screen { display:none; flex:1; flex-direction:column; overflow:hidden; }
+.screen.active { display:flex; }
+
+.status-bar { display:flex; justify-content:space-between; align-items:center; padding:56px 24px 0; font-size:12px; font-weight:600; color:var(--text2); flex-shrink:0; }
+.bottom-nav { display:flex; justify-content:space-around; padding:12px 20px 28px; border-top:1px solid var(--border); background:var(--bg); flex-shrink:0; }
+.nav-item { display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:4px 12px; }
+.nav-icon { font-size:20px; opacity:.4; }
+.nav-label { font-size:10px; color:var(--text3); }
+.nav-item.active .nav-icon { opacity:1; }
+.nav-item.active .nav-label { color:var(--teal); }
+.nav-dot { width:4px; height:4px; background:var(--teal); border-radius:50%; }
+.scroll-inner { flex:1; overflow-y:auto; scrollbar-width:none; }
+.scroll-inner::-webkit-scrollbar { display:none; }
+
+/* ── SHARED COMPONENTS ── */
+.detail-header { padding:16px 20px 0; display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-shrink:0; }
+.back-btn { width:34px; height:34px; background:var(--surface2); border:1px solid var(--border); border-radius:9px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:16px; flex-shrink:0; }
+.detail-category { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:1px; }
+.detail-title { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; letter-spacing:-.02em; }
+.live-badge { display:flex; align-items:center; gap:5px; border-radius:20px; padding:5px 10px; font-size:10px; font-weight:700; border:1px solid; flex-shrink:0; }
+.live-pulse { width:6px; height:6px; border-radius:50%; animation:pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)} }
+.section-title { padding:0 20px; font-size:12px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px; flex-shrink:0; }
+.detail-hint { margin:0 20px; background:linear-gradient(135deg,rgba(0,201,184,0.06),rgba(59,139,255,0.06)); border:1px solid rgba(0,201,184,0.2); border-radius:var(--radius); padding:14px 16px; display:flex; gap:12px; align-items:flex-start; }
+.hint-icon { font-size:20px; flex-shrink:0; }
+.hint-title { font-family:'Syne',sans-serif; font-size:12px; font-weight:700; color:var(--teal); margin-bottom:3px; text-transform:uppercase; letter-spacing:.08em; }
+.hint-body { font-size:12px; color:var(--text2); line-height:1.5; }
+.stat-row { display:flex; gap:10px; padding:0 20px; margin-bottom:14px; flex-shrink:0; }
+.stat-box { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center; }
+.stat-val { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; margin-bottom:3px; }
+.stat-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.08em; }
+
+/* ══ SPLASH ══ */
+#scr-splash { align-items:center; justify-content:center; padding:40px; position:relative; }
+.splash-bg { position:absolute; inset:0; background:radial-gradient(ellipse 200px 200px at 50% 40%,rgba(0,201,184,0.08),transparent 70%),radial-gradient(ellipse 300px 400px at 20% 80%,rgba(59,139,255,0.04),transparent 60%); }
+.splash-ring { width:120px; height:120px; border-radius:32px; background:linear-gradient(135deg,rgba(0,201,184,0.15),rgba(59,139,255,0.1)); border:1px solid rgba(0,201,184,0.3); display:flex; align-items:center; justify-content:center; margin-bottom:28px; z-index:1; box-shadow:0 0 40px rgba(0,201,184,0.15); font-size:52px; }
+.splash-title { font-family:'Syne',sans-serif; font-size:34px; font-weight:800; letter-spacing:-.03em; z-index:1; margin-bottom:8px; }
+.splash-sub { font-size:13px; color:var(--text2); text-align:center; z-index:1; margin-bottom:56px; line-height:1.5; }
+.splash-btn { width:100%; max-width:280px; padding:17px 24px; background:var(--teal); color:#000; font-family:'Syne',sans-serif; font-size:15px; font-weight:700; border:none; border-radius:14px; cursor:pointer; z-index:1; transition:all .2s; box-shadow:0 8px 24px rgba(0,201,184,0.3); }
+.splash-btn:hover { transform:translateY(-1px); }
+.splash-hint { font-size:11px; color:var(--text3); margin-top:14px; z-index:1; }
+
+/* ══ HOME ══ */
+.home-header { padding:16px 20px 14px; display:flex; justify-content:space-between; align-items:flex-start; flex-shrink:0; }
+.home-greeting { font-size:12px; color:var(--text3); margin-bottom:2px; }
+.home-title { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; letter-spacing:-.02em; }
+.notif-btn { width:38px; height:38px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
+.notif-dot { position:absolute; top:7px; right:7px; width:7px; height:7px; background:var(--red); border-radius:50%; border:1.5px solid var(--bg); }
+.risk-banner { margin:0 20px 16px; background:linear-gradient(135deg,#1A1228,#12161F); border:1px solid rgba(255,59,78,0.25); border-radius:var(--radius); padding:16px 18px; display:flex; align-items:center; gap:14px; position:relative; overflow:hidden; flex-shrink:0; }
+.risk-banner::before { content:''; position:absolute; top:0; left:0; right:0; height:1px; background:linear-gradient(90deg,transparent,rgba(255,59,78,0.5),transparent); }
+.risk-orb { width:48px; height:48px; border-radius:50%; background:conic-gradient(var(--red) 0deg 252deg,rgba(255,255,255,0.05) 252deg 360deg); display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative; }
+.risk-orb::after { content:''; position:absolute; width:36px; height:36px; border-radius:50%; background:#1A1228; }
+.risk-orb-val { position:absolute; font-family:'Syne',sans-serif; font-size:13px; font-weight:800; color:var(--red); z-index:1; }
+.risk-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:3px; }
+.risk-value { font-family:'Syne',sans-serif; font-size:17px; font-weight:700; color:var(--red); margin-bottom:2px; }
+.risk-sub { font-size:11px; color:var(--text2); }
+.risk-refresh { width:30px; height:30px; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; font-size:14px; }
+.cat-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 20px; margin-bottom:14px; flex-shrink:0; }
+.cat-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 14px; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+.cat-card:hover { border-color:var(--border2); transform:translateY(-1px); }
+.cat-icon-wrap { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:10px; }
+.cat-name { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; margin-bottom:4px; letter-spacing:-.01em; }
+.cat-val { font-size:11px; color:var(--text2); }
+.cat-badge { position:absolute; top:10px; right:10px; padding:2px 7px; border-radius:20px; font-size:10px; font-weight:700; font-family:'Syne',sans-serif; }
+.cat-card.weather .cat-icon-wrap{background:var(--blue-dim)}.cat-card.weather .cat-name{color:var(--blue)}.cat-card.weather .cat-badge{background:var(--blue-dim);color:var(--blue)}
+.cat-card.quake .cat-icon-wrap{background:var(--red-dim)}.cat-card.quake .cat-name{color:var(--red)}.cat-card.quake .cat-badge{background:var(--red-dim);color:var(--red)}
+.cat-card.news .cat-icon-wrap{background:var(--yellow-dim)}.cat-card.news .cat-name{color:var(--yellow)}.cat-card.news .cat-badge{background:var(--yellow-dim);color:var(--yellow)}
+.cat-card.finance .cat-icon-wrap{background:var(--green-dim)}.cat-card.finance .cat-name{color:var(--green)}.cat-card.finance .cat-badge{background:var(--green-dim);color:var(--green)}
+.hints-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px; font-weight:500; }
+.hint-item { display:flex; align-items:flex-start; gap:10px; padding:11px 14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; }
+.hint-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+.hint-text { font-size:12px; color:var(--text2); line-height:1.45; }
+.hint-text strong { color:var(--text); font-weight:500; }
+
+/* ══ WEATHER ══ */
+.weather-hero { margin:0 20px 14px; background:linear-gradient(135deg,#0E1728,#111D35); border:1px solid rgba(59,139,255,0.2); border-radius:var(--radius); padding:20px; position:relative; overflow:hidden; flex-shrink:0; }
+.weather-hero::after { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:radial-gradient(circle,rgba(59,139,255,0.1),transparent 70%); pointer-events:none; }
+.weather-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+.weather-temp { font-family:'Syne',sans-serif; font-size:64px; font-weight:800; letter-spacing:-.04em; line-height:1; }
+.weather-temp sup { font-size:24px; font-weight:500; color:var(--text2); vertical-align:super; }
+.weather-emoji { font-size:52px; }
+.weather-desc { font-size:15px; color:var(--text2); margin-bottom:4px; }
+.weather-loc { font-size:12px; color:var(--text3); }
+.weather-stats { display:flex; border-top:1px solid var(--border); padding-top:14px; }
+.w-stat { flex:1; text-align:center; }
+.w-stat+.w-stat { border-left:1px solid var(--border); }
+.w-stat-val { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:2px; }
+.w-stat-label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:.08em; }
+.hourly-row { display:flex; gap:8px; padding:0 20px; overflow-x:auto; scrollbar-width:none; margin-bottom:14px; flex-shrink:0; }
+.hourly-row::-webkit-scrollbar { display:none; }
+.hour-chip { flex-shrink:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; text-align:center; min-width:60px; }
+.hour-chip.now { background:var(--blue-dim); border-color:rgba(59,139,255,0.35); }
+.hour-time { font-size:10px; color:var(--text3); margin-bottom:6px; }
+.hour-emoji { font-size:18px; margin-bottom:6px; }
+.hour-temp { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; }
+.warning-card { margin:0 20px 16px; border-radius:var(--radius); padding:14px 16px; display:flex; gap:12px; align-items:flex-start; }
+.warning-icon { font-size:22px; flex-shrink:0; }
+.warning-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; margin-bottom:3px; }
+.warning-text { font-size:11px; color:var(--text2); line-height:1.45; }
+
+/* ══ SEISMIC ══ */
+.seismic-hero { margin:0 20px 14px; background:linear-gradient(135deg,#1A0E0E,#1F1212); border:1px solid rgba(255,59,78,0.2); border-radius:var(--radius); padding:20px; position:relative; overflow:hidden; flex-shrink:0; }
+.seismic-mag { font-family:'Syne',sans-serif; font-size:72px; font-weight:800; letter-spacing:-.05em; color:var(--red); line-height:1; }
+.seismic-mag span { font-size:22px; color:var(--text2); font-weight:500; }
+.seismic-rings { position:absolute; right:20px; top:50%; transform:translateY(-50%); width:90px; height:90px; display:flex; align-items:center; justify-content:center; }
+.seismic-ring { position:absolute; border-radius:50%; border:1.5px solid rgba(255,59,78,0.35); animation:ripple 2.4s infinite; }
+.seismic-ring:nth-child(1){width:20px;height:20px;background:rgba(255,59,78,0.45);animation-delay:0s}
+.seismic-ring:nth-child(2){width:42px;height:42px;animation-delay:.5s}
+.seismic-ring:nth-child(3){width:64px;height:64px;animation-delay:1s}
+.seismic-ring:nth-child(4){width:86px;height:86px;animation-delay:1.5s;opacity:.25}
+@keyframes ripple{0%{transform:scale(.85);opacity:.8}100%{transform:scale(1.1);opacity:0}}
+.event-list { padding:0 20px; display:flex; flex-direction:column; gap:10px; }
+.event-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:13px 15px; display:flex; gap:12px; align-items:flex-start; }
+.event-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+.event-name { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--text); margin-bottom:3px; letter-spacing:-.01em; }
+.event-desc { font-size:11px; color:var(--text2); line-height:1.4; margin-bottom:4px; }
+.event-meta { font-size:10px; color:var(--text3); }
+.event-badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:10px; font-weight:700; margin-top:5px; }
+
+/* ══ NEWS ══ */
+.news-featured { margin:0 20px 14px; background:linear-gradient(135deg,#1A1600,#1F1C0A); border:1px solid rgba(245,200,66,0.2); border-radius:var(--radius); padding:18px; flex-shrink:0; }
+.news-ftag { display:inline-block; background:var(--yellow); color:#000; font-family:'Syne',sans-serif; font-size:10px; font-weight:800; padding:3px 8px; border-radius:6px; margin-bottom:10px; text-transform:uppercase; letter-spacing:.05em; }
+.news-fheadline { font-family:'Syne',sans-serif; font-size:17px; font-weight:800; color:var(--text); line-height:1.3; margin-bottom:8px; letter-spacing:-.02em; }
+.news-fmeta { font-size:11px; color:var(--text3); display:flex; gap:10px; }
+.news-tabs { display:flex; padding:0 20px; margin-bottom:14px; flex-shrink:0; border-bottom:1px solid var(--border); }
+.news-tab { flex:1; text-align:center; padding:8px 0; font-size:12px; font-weight:600; font-family:'Syne',sans-serif; color:var(--text3); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; }
+.news-tab.active { color:var(--yellow); border-bottom-color:var(--yellow); }
+.news-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:15px; display:flex; gap:12px; align-items:flex-start; cursor:pointer; transition:border-color .15s; }
+.news-card:hover { border-color:var(--border2); }
+.news-sdot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:5px; }
+.news-headline { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--text); line-height:1.35; margin-bottom:5px; }
+.news-meta { font-size:10px; color:var(--text3); margin-bottom:6px; }
+.news-snippet { font-size:11px; color:var(--text2); line-height:1.45; }
+.news-tag { display:inline-block; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:700; margin-top:6px; }
+
+/* ══ MARKETS ══ */
+.market-hero { margin:0 20px 14px; background:linear-gradient(135deg,#0D1A12,#111F15); border:1px solid rgba(34,215,122,0.2); border-radius:var(--radius); padding:18px; position:relative; overflow:hidden; flex-shrink:0; }
+.market-hero::after { content:''; position:absolute; top:-40px; right:-40px; width:160px; height:160px; background:radial-gradient(circle,rgba(34,215,122,0.08),transparent 70%); pointer-events:none; }
+.mh-label { font-size:11px; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; margin-bottom:4px; }
+.mh-name { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; margin-bottom:2px; }
+.mh-val { font-family:'Syne',sans-serif; font-size:38px; font-weight:800; color:var(--green); letter-spacing:-.03em; line-height:1; margin-bottom:4px; }
+.mh-change { font-size:13px; font-weight:600; }
+.sparkline { width:100%; height:36px; margin-top:8px; }
+.market-row { display:flex; gap:10px; padding:0 20px; margin-bottom:10px; flex-shrink:0; }
+.market-item { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; }
+.mi-name { font-size:11px; color:var(--text3); margin-bottom:4px; }
+.mi-val { font-family:'Syne',sans-serif; font-size:15px; font-weight:700; margin-bottom:2px; }
+.mi-chg { font-size:11px; font-weight:600; }
+.mi-chg.up{color:var(--green)}.mi-chg.dn{color:var(--red)}
+
+/* ══ ALERTS ══ */
+.alerts-header { padding:16px 20px; flex-shrink:0; }
+.alerts-title { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; letter-spacing:-.02em; margin-bottom:12px; }
+.filter-row { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
+.filter-row::-webkit-scrollbar { display:none; }
+.filter-chip { flex-shrink:0; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid var(--border); background:var(--surface); color:var(--text2); transition:all .15s; font-family:'Syne',sans-serif; }
+.filter-chip.active { background:var(--teal); border-color:var(--teal); color:#000; }
+.alerts-list { flex:1; overflow-y:auto; padding:0 20px 20px; scrollbar-width:none; display:flex; flex-direction:column; gap:10px; }
+.alerts-list::-webkit-scrollbar { display:none; }
+.alert-item { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; display:flex; gap:12px; align-items:flex-start; cursor:pointer; transition:border-color .15s; }
+.alert-item:hover { border-color:var(--border2); }
+.alert-sev { width:4px; border-radius:4px; flex-shrink:0; align-self:stretch; }
+.alert-icon-wrap { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.alert-body { flex:1; min-width:0; }
+.alert-top { display:flex; justify-content:space-between; gap:8px; margin-bottom:4px; }
+.alert-name { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--text); line-height:1.3; }
+.alert-time { font-size:10px; color:var(--text3); flex-shrink:0; }
+.alert-desc { font-size:11px; color:var(--text2); line-height:1.45; }
+.alert-tag { display:inline-flex; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:700; margin-top:6px; }
+.sev-red{background:var(--red)}.sev-orange{background:var(--orange)}.sev-yellow{background:var(--yellow)}.sev-green{background:var(--green)}.sev-blue{background:var(--blue)}
+
+/* ══ MAP ══ */
+.map-canvas { flex:1; position:relative; background:#0D1520; overflow:hidden; }
+.map-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px); background-size:30px 30px; }
+.map-search { position:absolute; top:12px; left:12px; right:12px; background:rgba(17,22,32,0.95); border:1px solid var(--border2); border-radius:10px; padding:10px 14px; display:flex; align-items:center; gap:8px; backdrop-filter:blur(8px); }
+.map-search-text { font-size:13px; color:var(--text3); }
+.map-pin { position:absolute; display:flex; flex-direction:column; align-items:center; cursor:pointer; }
+.map-pin-dot { width:14px; height:14px; border-radius:50%; border:2px solid white; }
+.map-pin-label { font-size:9px; font-weight:700; font-family:'Syne',sans-serif; color:white; background:rgba(0,0,0,0.7); padding:2px 5px; border-radius:4px; margin-top:3px; white-space:nowrap; }
+.map-legend { position:absolute; bottom:12px; left:12px; background:rgba(10,13,18,0.92); border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:6px; backdrop-filter:blur(8px); }
+.legend-item { display:flex; align-items:center; gap:7px; font-size:10px; color:var(--text2); }
+.legend-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.map-refresh { position:absolute; bottom:12px; right:12px; width:36px; height:36px; background:rgba(10,13,18,0.92); border:1px solid var(--border); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; backdrop-filter:blur(8px); }
+
+/* ══ SETTINGS ══ */
+.settings-hero { padding:14px 20px 18px; display:flex; align-items:center; gap:14px; flex-shrink:0; }
+.settings-avatar { width:54px; height:54px; border-radius:16px; background:linear-gradient(135deg,var(--teal),var(--blue)); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.settings-name { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; letter-spacing:-.01em; }
+.settings-sub { font-size:12px; color:var(--text3); margin-top:2px; }
+.settings-section-title { padding:0 20px 8px; font-size:11px; font-weight:600; color:var(--text3); text-transform:uppercase; letter-spacing:.1em; flex-shrink:0; }
+.settings-group { margin:0 20px 20px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; flex-shrink:0; }
+.settings-row { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; transition:background .15s; border-bottom:1px solid var(--border); }
+.settings-row:last-child { border-bottom:none; }
+.settings-row:hover { background:var(--surface2); }
+.settings-row-icon { width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.settings-row-title { font-size:14px; font-weight:500; margin-bottom:1px; }
+.settings-row-sub { font-size:11px; color:var(--text3); }
+.settings-row-right { font-size:12px; color:var(--text3); margin-left:auto; display:flex; align-items:center; gap:6px; }
+.toggle { width:36px; height:20px; background:var(--teal); border-radius:20px; position:relative; flex-shrink:0; }
+.toggle::after { content:''; position:absolute; right:3px; top:3px; width:14px; height:14px; background:white; border-radius:50%; }
+.toggle.off { background:var(--surface3); }
+.toggle.off::after { right:auto; left:3px; }
+.settings-version { text-align:center; font-size:11px; color:var(--text3); padding:8px 0 4px; }
+
+/* ANNOTATIONS */
+.annotations { max-width:900px; width:100%; }
+.ann-title { font-family:'Syne',sans-serif; font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--text3); margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:12px; }
+.ann-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:16px; }
+.ann-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+.ann-card-title { font-family:'Syne',sans-serif; font-size:13px; font-weight:700; color:var(--teal); margin-bottom:6px; }
+.ann-card-body { font-size:12px; color:var(--text2); line-height:1.6; }
+.ann-tag { display:inline-block; background:rgba(0,201,184,0.1); border:1px solid rgba(0,201,184,0.2); border-radius:4px; padding:1px 6px; font-size:10px; color:var(--teal); font-weight:600; margin-top:8px; }
+.ann-tag.b4a { background:rgba(245,200,66,0.1); border-color:rgba(245,200,66,0.2); color:var(--yellow); }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>CrisisSense UI Prototype</h1>
+  <h2>Interactive Screen Mockup</h2>
+  <p>All 9 screens in one phone shell. Tap category cards, bottom nav, or use the pills above to navigate.</p>
+  <div class="b4a-note">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" stroke="#00C9B8"/><path d="M6 3.5v3l2 1" stroke="#00C9B8" stroke-width="1.2" stroke-linecap="round"/></svg>
+    B4A-compatible — Activity, LinearLayout, ScrollView, CardView, Canvas, ListView
+  </div>
+</div>
+
+<div class="screen-nav" id="navPills">
+  <div class="snav-pill active" data-screen="splash">Splash</div>
+  <div class="snav-pill" data-screen="home">🏠 Home</div>
+  <div class="snav-pill" data-screen="weather">🌦 Weather</div>
+  <div class="snav-pill" data-screen="seismic">🌍 Seismic</div>
+  <div class="snav-pill" data-screen="news">📰 News</div>
+  <div class="snav-pill" data-screen="markets">📈 Markets</div>
+  <div class="snav-pill" data-screen="alerts">🔔 Alerts</div>
+  <div class="snav-pill" data-screen="map">🗺 Map</div>
+  <div class="snav-pill" data-screen="settings">⚙️ Settings</div>
+</div>
+
+<div class="phone-wrap">
+  <div class="screen-label" id="screenLabel">Screen — Splash / Boot</div>
+  <div class="phone">
+    <div class="dynamic-island"><div class="di-cam"></div><div class="di-dot"></div></div>
+    <div class="screen-transition" id="trans"></div>
+    <div class="screen-content">
+
+      <!-- ════════════════ SPLASH ════════════════ -->
+      <div id="scr-splash" class="screen active">
+        <div class="splash-bg"></div>
+        <div class="splash-ring">🛡️</div>
+        <div class="splash-title">CrisisSense</div>
+        <div class="splash-sub">Your unified emergency intelligence<br>dashboard — stay informed, stay safe.</div>
+        <button class="splash-btn" onclick="goTo('home')">Get Started →</button>
+        <div class="splash-hint">Tap to continue</div>
+      </div>
+
+      <!-- ════════════════ HOME ════════════════ -->
+      <div id="scr-home" class="screen">
+        <div class="status-bar"><span>9:41</span><div style="display:flex;gap:5px;align-items:center;font-size:11px">▲▲▲ 🛜 🔋</div></div>
+        <div class="home-header">
+          <div><div class="home-greeting">Good morning</div><div class="home-title">Situation Report</div></div>
+          <div class="notif-btn" onclick="goTo('alerts')">🔔<div class="notif-dot"></div></div>
+        </div>
+        <div class="risk-banner">
+          <div class="risk-orb"><div class="risk-orb-val">70</div></div>
+          <div style="flex:1">
+            <div class="risk-label">Overall Risk Index</div>
+            <div class="risk-value">HIGH — Elevated</div>
+            <div class="risk-sub">3 active alerts across categories</div>
+          </div>
+          <div class="risk-refresh">↻</div>
+        </div>
+        <div class="cat-grid">
+          <div class="cat-card weather" onclick="goTo('weather')">
+            <span class="cat-badge">WATCH</span>
+            <div class="cat-icon-wrap">🌦️</div>
+            <div class="cat-name">Weather</div>
+            <div class="cat-val">32°C · Stormy</div>
+          </div>
+          <div class="cat-card quake" onclick="goTo('seismic')">
+            <span class="cat-badge">ALERT</span>
+            <div class="cat-icon-wrap">🌍</div>
+            <div class="cat-name">Seismic</div>
+            <div class="cat-val">Mag 5.3 · 45km</div>
+          </div>
+          <div class="cat-card news" onclick="goTo('news')">
+            <span class="cat-badge" style="background:var(--yellow-dim);color:var(--yellow)">3 NEW</span>
+            <div class="cat-icon-wrap">📰</div>
+            <div class="cat-name">News</div>
+            <div class="cat-val">Breaking headlines</div>
+          </div>
+          <div class="cat-card finance" onclick="goTo('markets')">
+            <span class="cat-badge" style="background:var(--green-dim);color:var(--green)">STABLE</span>
+            <div class="cat-icon-wrap">📈</div>
+            <div class="cat-name">Markets</div>
+            <div class="cat-val">PSEi +0.4%</div>
+          </div>
+        </div>
+        <div style="padding:0 20px">
+          <div class="hints-label">⚡ Smart Hints</div>
+          <div class="hint-item"><div class="hint-dot" style="background:var(--red)"></div><div class="hint-text"><strong>Stock 3-day water supply.</strong> Tropical disturbance expected within 48 hrs.</div></div>
+          <div class="hint-item"><div class="hint-dot" style="background:var(--orange)"></div><div class="hint-text"><strong>Seismic cluster detected.</strong> Secure loose furniture and identify safe zones.</div></div>
+          <div class="hint-item"><div class="hint-dot" style="background:var(--yellow)"></div><div class="hint-text"><strong>Markets stable.</strong> No major financial precautions needed this week.</div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active" onclick="goTo('home')"><div class="nav-icon">🏠</div><div class="nav-label">Home</div><div class="nav-dot"></div></div>
+          <div class="nav-item" onclick="goTo('alerts')"><div class="nav-icon">🔔</div><div class="nav-label">Alerts</div></div>
+          <div class="nav-item" onclick="goTo('map')"><div class="nav-icon">🗺️</div><div class="nav-label">Map</div></div>
+          <div class="nav-item" onclick="goTo('settings')"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+        </div>
+      </div>
+
+      <!-- ════════════════ WEATHER ════════════════ -->
+      <div id="scr-weather" class="screen">
+        <div class="status-bar"><span>9:41</span><div></div></div>
+        <div class="detail-header">
+          <div class="back-btn" onclick="goTo('home')">←</div>
+          <div><div class="detail-category">Live Data</div><div class="detail-title" style="color:var(--blue)">Weather</div></div>
+          <div class="live-badge" style="background:var(--green-dim);border-color:rgba(34,215,122,0.2);color:var(--green)"><div class="live-pulse" style="background:var(--green)"></div>LIVE</div>
+        </div>
+        <div class="scroll-inner">
+          <div class="weather-hero">
+            <div class="weather-top">
+              <div><div class="weather-temp">32<sup>°C</sup></div><div class="weather-desc">Thunderstorms</div><div class="weather-loc">📍 San Fernando, Pampanga</div></div>
+              <div class="weather-emoji">⛈️</div>
+            </div>
+            <div class="weather-stats">
+              <div class="w-stat"><div class="w-stat-val">87%</div><div class="w-stat-label">Humidity</div></div>
+              <div class="w-stat"><div class="w-stat-val">38kph</div><div class="w-stat-label">Wind</div></div>
+              <div class="w-stat"><div class="w-stat-val">992hPa</div><div class="w-stat-label">Pressure</div></div>
+            </div>
+          </div>
+          <div class="warning-card" style="background:var(--red-dim);border:1px solid rgba(255,59,78,0.25)">
+            <div class="warning-icon">⚠️</div>
+            <div><div class="warning-title" style="color:var(--red)">Tropical Disturbance Warning</div><div class="warning-text">Possible Tropical Depression formation within 48 hours. PAGASA advisory #12 in effect.</div></div>
+          </div>
+          <div class="section-title">Hourly Forecast</div>
+          <div class="hourly-row">
+            <div class="hour-chip now"><div class="hour-time">NOW</div><div class="hour-emoji">⛈️</div><div class="hour-temp">32°</div></div>
+            <div class="hour-chip"><div class="hour-time">12PM</div><div class="hour-emoji">🌧️</div><div class="hour-temp">31°</div></div>
+            <div class="hour-chip"><div class="hour-time">3PM</div><div class="hour-emoji">⛈️</div><div class="hour-temp">30°</div></div>
+            <div class="hour-chip"><div class="hour-time">6PM</div><div class="hour-emoji">🌩️</div><div class="hour-temp">29°</div></div>
+            <div class="hour-chip"><div class="hour-time">9PM</div><div class="hour-emoji">🌧️</div><div class="hour-temp">27°</div></div>
+            <div class="hour-chip"><div class="hour-time">12AM</div><div class="hour-emoji">🌦️</div><div class="hour-temp">26°</div></div>
+          </div>
+          <div class="detail-hint">
+            <div class="hint-icon">💡</div>
+            <div><div class="hint-title">CrisisSense Recommends</div><div class="hint-body">Heavy rain and strong winds expected. Stock at least 3 days of food and water. Avoid flood-prone areas and charge all devices now.</div></div>
+          </div>
+          <div style="height:20px"></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="goTo('home')"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+          <div class="nav-item active"><div class="nav-icon">🔔</div><div class="nav-label">Alerts</div><div class="nav-dot"></div></div>
+          <div class="nav-item" onclick="goTo('map')"><div class="nav-icon">🗺️</div><div class="nav-label">Map</div></div>
+          <div class="nav-item" onclick="goTo('settings')"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+        </div>
+      </div>
+
+      <!-- ════════════════ SEISMIC ════════════════ -->
+      <div id="scr-seismic" class="screen">
+        <div class="status-bar"><span>9:41</span><div></div></div>
+        <div class="detail-header">
+          <div class="back-btn" onclick="goTo('home')">←</div>
+          <div><div class="detail-category">Seismic Activity</div><div class="detail-title" style="color:var(--red)">Earthquakes</div></div>
+          <div class="live-badge" style="background:var(--red-dim);border-color:rgba(255,59,78,0.25);color:var(--red)"><div class="live-pulse" style="background:var(--red)"></div>LIVE</div>
+        </div>
+        <div class="scroll-inner">
+          <div class="seismic-hero">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px">Latest Event</div>
+                <div class="seismic-mag">5.3<span> Mag</span></div>
+                <div style="font-size:13px;color:var(--text2);margin-top:4px">📍 Batangas · Depth: 45km</div>
+                <div style="font-size:12px;color:var(--text3);margin-top:2px">⏱ 18 min ago · No tsunami threat</div>
+              </div>
+              <div class="seismic-rings">
+                <div class="seismic-ring"></div><div class="seismic-ring"></div>
+                <div class="seismic-ring"></div><div class="seismic-ring"></div>
+              </div>
+            </div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-box"><div class="stat-val" style="color:var(--orange)">III–IV</div><div class="stat-label">Intensity</div></div>
+            <div class="stat-box"><div class="stat-val" style="color:var(--red)">45km</div><div class="stat-label">Depth</div></div>
+            <div class="stat-box"><div class="stat-val" style="color:var(--yellow)">4</div><div class="stat-label">Today</div></div>
+          </div>
+          <div class="section-title">Recent Events (24 hrs)</div>
+          <div class="event-list">
+            <div class="event-item">
+              <div class="event-dot" style="background:var(--red)"></div>
+              <div><div class="event-name">M5.3 — Batangas</div><div class="event-desc">Depth 45km · Felt intensity III–IV in nearby provinces</div><div class="event-meta">18 min ago · 13.75°N, 121.05°E</div><div class="event-badge" style="background:var(--red-dim);color:var(--red)">HIGH</div></div>
+            </div>
+            <div class="event-item">
+              <div class="event-dot" style="background:var(--orange)"></div>
+              <div><div class="event-name">M3.8 — Mindanao</div><div class="event-desc">Depth 22km · Slightly felt in Davao area</div><div class="event-meta">2 hrs ago · 7.12°N, 125.48°E</div><div class="event-badge" style="background:var(--orange-dim);color:var(--orange)">MED</div></div>
+            </div>
+            <div class="event-item">
+              <div class="event-dot" style="background:var(--yellow)"></div>
+              <div><div class="event-name">M2.9 — Bicol Region</div><div class="event-desc">Depth 12km · Not felt; recorded by instruments only</div><div class="event-meta">5 hrs ago · 13.42°N, 123.68°E</div><div class="event-badge" style="background:var(--yellow-dim);color:var(--yellow)">LOW</div></div>
+            </div>
+            <div class="event-item">
+              <div class="event-dot" style="background:var(--text3)"></div>
+              <div><div class="event-name">M2.1 — Leyte Gulf</div><div class="event-desc">Depth 35km · Instrument-only detection</div><div class="event-meta">9 hrs ago · 10.88°N, 125.14°E</div><div class="event-badge" style="background:var(--surface3);color:var(--text3)">MINOR</div></div>
+            </div>
+          </div>
+          <div style="height:14px"></div>
+          <div class="detail-hint" style="margin-bottom:20px">
+            <div class="hint-icon">💡</div>
+            <div><div class="hint-title">CrisisSense Recommends</div><div class="hint-body">Seismic cluster detected in Batangas. Secure loose furniture, identify indoor safe zones, and keep emergency bag ready.</div></div>
+          </div>
+          <div style="height:20px"></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="goTo('home')"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+          <div class="nav-item active"><div class="nav-icon">🔔</div><div class="nav-label">Alerts</div><div class="nav-dot"></div></div>
+          <div class="nav-item" onclick="goTo('map')"><div class="nav-icon">🗺️</div><div class="nav-label">Map</div></div>
+          <div class="nav-item" onclick="goTo('settings')"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+        </div>
+      </div>
+
+      <!-- ════════════════ NEWS ════════════════ -->
+      <div id="scr-news" class="screen">
+        <div class="status-bar"><span>9:41</span><div></div></div>
+        <div class="detail-header">
+          <div class="back-btn" onclick="goTo('home')">←</div>
+          <div><div class="detail-category">Breaking Updates</div><div class="detail-title" style="color:var(--yellow)">News Feed</div></div>
+          <div class="live-badge" style="background:var(--yellow-dim);border-color:rgba(245,200,66,0.25);color:var(--yellow)"><div class="live-pulse" style="background:var(--yellow)"></div>LIVE</div>
+        </div>
+        <div class="news-featured">
+          <div class="news-ftag">🔥 Breaking</div>
+          <div class="news-fheadline">PAGASA Raises Alert: Tropical Disturbance Enters PAR</div>
+          <div class="news-fmeta"><span>PAGASA</span><span>·</span><span>5 min ago</span><span>·</span><span>National</span></div>
+        </div>
+        <div class="news-tabs">
+          <div class="news-tab active">All</div>
+          <div class="news-tab">Crisis</div>
+          <div class="news-tab">Gov't</div>
+          <div class="news-tab">Economy</div>
+        </div>
+        <div class="scroll-inner">
+          <div style="padding:0 20px;display:flex;flex-direction:column;gap:10px;padding-bottom:20px">
+            <div class="news-card">
+              <div class="news-sdot" style="background:var(--red)"></div>
+              <div><div class="news-headline">BSP Keeps Rate at 6.5% Amid Inflation Concerns</div><div class="news-meta">Philippine Daily Inquirer · 3h ago</div><div class="news-snippet">The Bangko Sentral ng Pilipinas held its key rate steady, citing manageable inflation outlook despite global uncertainty.</div><div class="news-tag" style="background:var(--red-dim);color:var(--red)">📈 Economy</div></div>
+            </div>
+            <div class="news-card">
+              <div class="news-sdot" style="background:var(--orange)"></div>
+              <div><div class="news-headline">M5.3 Quake Hits Batangas; PHIVOLCS Issues Statement</div><div class="news-meta">ABS-CBN News · 20m ago</div><div class="news-snippet">PHIVOLCS reports no tsunami threat but advises residents to remain alert for aftershocks.</div><div class="news-tag" style="background:var(--orange-dim);color:var(--orange)">🌍 Seismic</div></div>
+            </div>
+            <div class="news-card">
+              <div class="news-sdot" style="background:var(--yellow)"></div>
+              <div><div class="news-headline">NAIA Reports Airspace Restrictions Until Further Notice</div><div class="news-meta">Manila Bulletin · 1h ago</div><div class="news-snippet">The Civil Aviation Authority cites military exercise as the reason for temporary airspace restrictions over Metro Manila.</div><div class="news-tag" style="background:var(--yellow-dim);color:var(--yellow)">✈️ Geopolitical</div></div>
+            </div>
+            <div class="news-card">
+              <div class="news-sdot" style="background:var(--blue)"></div>
+              <div><div class="news-headline">PSEi Rises 0.4% as Investors Eye Fed Decision</div><div class="news-meta">BusinessWorld · 6h ago</div><div class="news-snippet">The Philippine Stock Exchange index gained ground as investors positioned ahead of the US Federal Reserve meeting.</div><div class="news-tag" style="background:var(--blue-dim);color:var(--blue)">📊 Finance</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="goTo('home')"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+          <div class="nav-item active"><div class="nav-icon">🔔</div><div class="nav-label">Alerts</div><div class="nav-dot"></div></div>
+          <div class="nav-item" onclick="goTo('map')"><div class="nav-icon">🗺️</div><div class="nav-label">Map</div></div>
+          <div class="nav-item" onclick="goTo('settings')"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+        </div>
+      </div>
+
+      <!-- ════════════════ MARKETS ════════════════ -->
+      <div id="scr-markets" class="screen">
+        <div class="status-bar"><span>9:41</span><div></div></div>
+        <div class="detail-header">
+          <div class="back-btn" onclick="goTo('home')">←</div>
+          <div><div class="detail-category">Economic Indicators</div><div class="detail-title" style="color:var(--green)">Markets</div></div>
+          <div class="live-badge" style="background:var(--green-dim);border-color:rgba(34,215,122,0.2);color:var(--green)"><div class="live-pulse" style="background:var(--green)"></div>LIVE</div>
+        </div>
+        <div class="scroll-inner">
+          <div class="market-hero">
+            <div class="mh-label">Philippine Stock Exchange</div>
+            <div class="mh-name">PSEi</div>
+            <div class="mh-val">6,812</div>
+            <div class="mh-change" style="color:var(--green)">▲ +27.3 (+0.40%) today</div>
+            <svg class="sparkline" viewBox="0 0 320 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22D77A" stop-opacity="0.4"/><stop offset="100%" stop-color="#22D77A" stop-opacity="0"/></linearGradient></defs>
+              <polygon points="0,30 40,26 80,28 115,20 145,22 175,15 205,17 245,10 280,8 320,5 320,36 0,36" fill="url(#sg)"/>
+              <polyline points="0,30 40,26 80,28 115,20 145,22 175,15 205,17 245,10 280,8 320,5" stroke="#22D77A" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="market-row">
+            <div class="market-item"><div class="mi-name">USD/PHP</div><div class="mi-val">₱56.14</div><div class="mi-chg dn">▼ -0.08 (-0.14%)</div></div>
+            <div class="market-item"><div class="mi-name">Gold (oz)</div><div class="mi-val">$2,341</div><div class="mi-chg up">▲ +12.4 (+0.53%)</div></div>
+          </div>
+          <div class="market-row">
+            <div class="market-item"><div class="mi-name">Crude Oil (WTI)</div><div class="mi-val">$82.40</div><div class="mi-chg dn">▼ -0.63 (-0.76%)</div></div>
+            <div class="market-item"><div class="mi-name">Inflation (CPI)</div><div class="mi-val">3.8%</div><div class="mi-chg" style="color:var(--yellow)">● Moderate</div></div>
+          </div>
+          <div class="stat-row">
+            <div class="stat-box"><div class="stat-val" style="color:var(--green)">STABLE</div><div class="stat-label">Status</div></div>
+            <div class="stat-box"><div class="stat-val" style="color:var(--yellow)">MED</div><div class="stat-label">Volatility</div></div>
+            <div class="stat-box"><div class="stat-val">+3.8%</div><div class="stat-label">YTD</div></div>
+          </div>
+          <div class="detail-hint" style="margin-bottom:20px">
+            <div class="hint-icon">💡</div>
+            <div><div class="hint-title">CrisisSense Recommends</div><div class="hint-body">Markets are stable. No major economic precautions needed this week. Moderate inflation — monitor fuel and grocery prices.</div></div>
+          </div>
+          <div style="height:20px"></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="goTo('home')"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+          <div class="nav-item active"><div class="nav-icon">🔔</div><div class="nav-label">Alerts</div><div class="nav-dot"></div></div>
+          <div class="nav-item" onclick="goTo('map')"><div class="nav-icon">🗺️</div><div class="nav-label">Map</div></div>
+          <div class="nav-item" onclick="goTo('settings')"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+        </div>
+      </div>
+
+      <!-- ════════════════ ALERTS ════════════════ -->
+      <div id="scr-alerts" class="screen">
+        <div class="status-bar"><span>9:41</span><div></div></div>
+        <div class="alerts-header">
+          <div class="alerts-title">All Alerts</div>
+          <div class="filter-row">
+            <div class="filter-chip active">All</div>
+            <div class="filter-chip">Weather</div>
+            <div class="filter-chip">Seismic</div>
+            <div class="filter-chip">News</div>
+            <div class="filter-chip">Finance</div>
+          </div>
+        </div>
+        <div class="alerts-list">
+          <div class="alert-item"><div class="alert-sev sev-red"></div><div class="alert-icon-wrap" style="background:var(--red-dim)">⛈️</div><div class="alert-body"><div class="alert-top"><div class="alert-name">Tropical Disturbance Warning</div><div class="alert-time">2m ago</div></div><div class="alert-desc">PAGASA Advisory #12. TD formation likely within 48hrs. Central Luzon on alert.</div><div class="alert-tag" style="background:var(--red-dim);color:var(--red)">🌦 Weather · HIGH</div></div></div>
+          <div class="alert-item"><div class="alert-sev sev-orange"></div><div class="alert-icon-wrap" style="background:var(--orange-dim)">🌍</div><div class="alert-body"><div class="alert-top"><div class="alert-name">M5.3 Earthquake — Batangas</div><div class="alert-time">18m ago</div></div><div class="alert-desc">Magnitude 5.3 at depth 45km. Felt intensity III–IV. No tsunami threat.</div><div class="alert-tag" style="background:var(--orange-dim);color:var(--orange)">🌍 Seismic · MED</div></div></div>
+          <div class="alert-item"><div class="alert-sev sev-yellow"></div><div class="alert-icon-wrap" style="background:var(--yellow-dim)">✈️</div><div class="alert-body"><div class="alert-top"><div class="alert-name">Restricted Airspace — NAIA</div><div class="alert-time">1h ago</div></div><div class="alert-desc">Unusual flight diversion patterns detected. State aircraft activity above Metro Manila.</div><div class="alert-tag" style="background:var(--yellow-dim);color:var(--yellow)">✈️ Geopolitical · LOW</div></div></div>
+          <div class="alert-item"><div class="alert-sev sev-blue"></div><div class="alert-icon-wrap" style="background:var(--blue-dim)">📰</div><div class="alert-body"><div class="alert-top"><div class="alert-name">Breaking: BSP Rate Decision</div><div class="alert-time">3h ago</div></div><div class="alert-desc">Bangko Sentral ng Pilipinas holds key rate steady at 6.5%. Markets respond positively.</div><div class="alert-tag" style="background:var(--blue-dim);color:var(--blue)">📰 News · INFO</div></div></div>
+          <div class="alert-item"><div class="alert-sev sev-green"></div><div class="alert-icon-wrap" style="background:var(--green-dim)">📈</div><div class="alert-body"><div class="alert-top"><div class="alert-name">PSEi Closes +0.4%</div><div class="alert-time">6h ago</div></div><div class="alert-desc">Philippine Stock Exchange index at 6,812. No significant volatility detected.</div><div class="alert-tag" style="background:var(--green-dim);color:var(--green)">📈 Finance · STABLE</div></div></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="goTo('home')"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+          <div class="nav-item active"><div class="nav-icon">🔔</div><div class="nav-label">Alerts</div><div class="nav-dot"></div></div>
+          <div class="nav-item" onclick="goTo('map')"><div class="nav-icon">🗺️</div><div class="nav-label">Map</div></div>
+          <div class="nav-item" onclick="goTo('settings')"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+        </div>
+      </div>
+
+      <!-- ════════════════ MAP ════════════════ -->
+      <div id="scr-map" class="screen">
+        <div class="status-bar"><span>9:41</span><div></div></div>
+        <div class="detail-header" style="padding-bottom:12px">
+          <div class="back-btn" onclick="goTo('home')">←</div>
+          <div><div class="detail-category">Live Overview</div><div class="detail-title" style="color:var(--teal)">Crisis Map</div></div>
+          <div class="live-badge" style="background:var(--green-dim);border-color:rgba(34,215,122,0.2);color:var(--green)"><div class="live-pulse" style="background:var(--green)"></div>LIVE</div>
+        </div>
+        <div class="map-canvas">
+          <div class="map-grid"></div>
+          <!-- Stylized Luzon outline -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;opacity:.15" viewBox="0 0 390 580" xmlns="http://www.w3.org/2000/svg">
+            <path d="M195,30 C188,70 212,100 206,140 C200,178 178,205 184,245 C190,285 222,312 216,352 C210,392 178,422 184,462 C190,502 200,535 195,565" stroke="#3B8BFF" stroke-width="2.5" fill="none" stroke-dasharray="5,7"/>
+            <path d="M135,110 C158,128 188,138 206,140 C224,142 254,128 274,148 C294,168 282,204 260,226" stroke="#3B8BFF" stroke-width="1.5" fill="none" stroke-dasharray="3,6"/>
+            <path d="M118,205 C148,215 175,228 184,245 C193,262 200,295 216,308 C232,321 264,316 284,330" stroke="#00C9B8" stroke-width="1" fill="none" stroke-dasharray="3,6" opacity=".7"/>
+            <ellipse cx="195" cy="295" rx="125" ry="185" stroke="#3B8BFF" stroke-width="1" fill="rgba(59,139,255,0.03)"/>
+          </svg>
+          <div class="map-search"><span style="opacity:.5">🔍</span><div class="map-search-text">Search location…</div></div>
+          <!-- Pins -->
+          <div class="map-pin" style="top:33%;left:47%">
+            <div class="map-pin-dot" style="background:var(--red);box-shadow:0 0 10px var(--red)"></div>
+            <div class="map-pin-label">⛈ Storm</div>
+          </div>
+          <div class="map-pin" style="top:60%;left:61%">
+            <div class="map-pin-dot" style="background:var(--orange);box-shadow:0 0 10px var(--orange)"></div>
+            <div class="map-pin-label">🌍 M5.3</div>
+          </div>
+          <div class="map-pin" style="top:21%;left:51%">
+            <div class="map-pin-dot" style="background:var(--yellow);box-shadow:0 0 10px var(--yellow)"></div>
+            <div class="map-pin-label">✈ NAIA</div>
+          </div>
+          <div class="map-pin" style="top:47%;left:33%">
+            <div class="map-pin-dot" style="background:var(--blue);box-shadow:0 0 10px var(--blue)"></div>
+            <div class="map-pin-label">📰 News</div>
+          </div>
+          <div class="map-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Weather</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div>Seismic</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div>Geopolitical</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>News</div>
+          </div>
+          <div class="map-refresh">↻</div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="goTo('home')"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+          <div class="nav-item" onclick="goTo('alerts')"><div class="nav-icon">🔔</div><div class="nav-label">Alerts</div></div>
+          <div class="nav-item active"><div class="nav-icon">🗺️</div><div class="nav-label">Map</div><div class="nav-dot"></div></div>
+          <div class="nav-item" onclick="goTo('settings')"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div></div>
+        </div>
+      </div>
+
+      <!-- ════════════════ SETTINGS ════════════════ -->
+      <div id="scr-settings" class="screen">
+        <div class="status-bar"><span>9:41</span><div></div></div>
+        <div style="padding:16px 20px 6px;flex-shrink:0"><div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em">Settings</div></div>
+        <div class="scroll-inner">
+          <div class="settings-hero">
+            <div class="settings-avatar">👤</div>
+            <div><div class="settings-name">CrisisSense User</div><div class="settings-sub">📍 San Fernando, Pampanga</div></div>
+          </div>
+          <div class="settings-section-title">Notifications</div>
+          <div class="settings-group">
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--red-dim)">🔔</div><div style="flex:1"><div class="settings-row-title">Push Notifications</div><div class="settings-row-sub">Receive real-time alerts</div></div><div class="settings-row-right"><div class="toggle"></div></div></div>
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--orange-dim)">⚠️</div><div style="flex:1"><div class="settings-row-title">High-Risk Only</div><div class="settings-row-sub">Only notify for RED alerts</div></div><div class="settings-row-right"><div class="toggle off"></div></div></div>
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--yellow-dim)">🔕</div><div style="flex:1"><div class="settings-row-title">Silent Hours</div><div class="settings-row-sub">10:00 PM – 6:00 AM</div></div><div class="settings-row-right" style="color:var(--teal)">Edit ›</div></div>
+          </div>
+          <div class="settings-section-title">Data &amp; Refresh</div>
+          <div class="settings-group">
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--blue-dim)">🔄</div><div style="flex:1"><div class="settings-row-title">Auto Refresh</div><div class="settings-row-sub">Fetch new data on open</div></div><div class="settings-row-right"><div class="toggle"></div></div></div>
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--teal-dim)">📡</div><div style="flex:1"><div class="settings-row-title">Refresh Interval</div><div class="settings-row-sub">How often to pull data</div></div><div class="settings-row-right" style="color:var(--teal)">5 min ›</div></div>
+          </div>
+          <div class="settings-section-title">Location</div>
+          <div class="settings-group">
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--green-dim)">📍</div><div style="flex:1"><div class="settings-row-title">Current Location</div><div class="settings-row-sub">San Fernando, Pampanga</div></div><div class="settings-row-right" style="color:var(--teal)">Change ›</div></div>
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--purple-dim)">🛰️</div><div style="flex:1"><div class="settings-row-title">Use GPS</div><div class="settings-row-sub">Auto-detect your location</div></div><div class="settings-row-right"><div class="toggle off"></div></div></div>
+          </div>
+          <div class="settings-section-title">About</div>
+          <div class="settings-group">
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--surface3)">ℹ️</div><div style="flex:1"><div class="settings-row-title">About CrisisSense</div><div class="settings-row-sub">MOVDEV 223 · PamSU CCS</div></div><div class="settings-row-right">›</div></div>
+            <div class="settings-row"><div class="settings-row-icon" style="background:var(--surface3)">📋</div><div style="flex:1"><div class="settings-row-title">API Sources</div><div class="settings-row-sub">OpenWeatherMap, USGS, NewsAPI…</div></div><div class="settings-row-right">›</div></div>
+          </div>
+          <div class="settings-version">CrisisSense v1.0.0 · Academic Build · A.Y. 2025-2026</div>
+          <div style="height:20px"></div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item" onclick="goTo('home')"><div class="nav-icon">🏠</div><div class="nav-label">Home</div></div>
+          <div class="nav-item" onclick="goTo('alerts')"><div class="nav-icon">🔔</div><div class="nav-label">Alerts</div></div>
+          <div class="nav-item" onclick="goTo('map')"><div class="nav-icon">🗺️</div><div class="nav-label">Map</div></div>
+          <div class="nav-item active"><div class="nav-icon">⚙️</div><div class="nav-label">Settings</div><div class="nav-dot"></div></div>
+        </div>
+      </div>
+
+    </div><!-- /screen-content -->
+  </div><!-- /phone -->
+</div>
+
+<!-- Annotations -->
+<div class="annotations">
+  <div class="ann-title">B4A Implementation Notes</div>
+  <div class="ann-grid">
+    <div class="ann-card"><div class="ann-card-title">📱 Navigation System</div><div class="ann-card-body">Each screen is a separate B4A Activity. The bottom nav and back buttons call StartActivity() / Finish(). Pass category data between screens via a shared globals module.</div><div class="ann-tag b4a">B4A: Activity + StartActivity</div></div>
+    <div class="ann-card"><div class="ann-card-title">🌍 Seismic Ripple Rings</div><div class="ann-card-body">Animate with a Timer firing every 50ms. Use Canvas.DrawCircle with increasing radius. Decrease alpha per ring (255 → 180 → 80 → 20) to simulate the fade-out effect.</div><div class="ann-tag b4a">B4A: Canvas.DrawCircle + Timer</div></div>
+    <div class="ann-card"><div class="ann-card-title">📈 Sparkline Chart</div><div class="ann-card-body">Normalize API price values to panel height. Draw connected lines with Canvas.DrawLine. Fill the area below with a DrawPath call using a semi-transparent paint color.</div><div class="ann-tag b4a">B4A: Canvas.DrawLine + DrawPath</div></div>
+    <div class="ann-card"><div class="ann-card-title">📰 News Card List</div><div class="ann-card-body">Use ListView with a custom XML layout per row (colored dot Panel, headline Label, meta Label, tag Label). Populate on JobDone after NewsAPI JSON is parsed.</div><div class="ann-tag b4a">B4A: ListView + CustomLayout</div></div>
+    <div class="ann-card"><div class="ann-card-title">🗺️ Crisis Map</div><div class="ann-card-body">Load Leaflet.js inside a WebView using an inline HTML string. Inject JavaScript to drop colored markers at lat/lng coordinates received from each API response.</div><div class="ann-tag b4a">B4A: WebView + JavaScript injection</div></div>
+    <div class="ann-card"><div class="ann-card-title">⚙️ Settings Toggles</div><div class="ann-card-body">Use ToggleButton for each switch row. Save preference values with KeyValueStore (B4A's built-in persistent key-value storage) on each toggle change event.</div><div class="ann-tag b4a">B4A: ToggleButton + KeyValueStore</div></div>
+    <div class="ann-card"><div class="ann-card-title">🃏 Category Cards Grid</div><div class="ann-card-body">Two HorizontalLinearLayouts stacked vertically, each holding two CardViews at 50% width. Each card has an icon, two Labels, and a badge Panel in a RelativeLayout.</div><div class="ann-tag b4a">B4A: CardView + HLLayout</div></div>
+    <div class="ann-card"><div class="ann-card-title">📡 API + JSON Parsing</div><div class="ann-card-body">OkHttpUtils2 fires one async GET per category on tap. JobDone event parses JSON with JSONObject/JSONArray. All four categories work independently — one failure doesn't break others.</div><div class="ann-tag b4a">B4A: OkHttpUtils2 + JSON</div></div>
+    <div class="ann-card"><div class="ann-card-title">🎨 Risk Gauge Orb</div><div class="ann-card-body">DrawArc on a Canvas with SweepAngle = (score/100)*360. Overlay a smaller filled circle in the card background color to create the donut ring. Center a Label over it for the number.</div><div class="ann-tag b4a">B4A: Canvas.DrawArc + Label</div></div>
+  </div>
+</div>
+
+<script>
+const SCREENS = ['splash','home','weather','seismic','news','markets','alerts','map','settings'];
+const LABELS = {
+  splash:'Screen — Splash / Boot', home:'Screen — Home Dashboard',
+  weather:'Screen — Weather Detail', seismic:'Screen — Seismic Detail',
+  news:'Screen — News Feed', markets:'Screen — Markets Detail',
+  alerts:'Screen — All Alerts', map:'Screen — Crisis Map', settings:'Screen — Settings'
+};
+let current = 'splash';
+
+function goTo(screen) {
+  if (screen === current) return;
+  const trans = document.getElementById('trans');
+  trans.classList.add('flash');
+  setTimeout(() => {
+    document.getElementById('scr-' + current).classList.remove('active');
+    document.getElementById('scr-' + screen).classList.add('active');
+    current = screen;
+    document.getElementById('screenLabel').textContent = LABELS[screen] || screen;
+    document.querySelectorAll('.snav-pill').forEach(p => {
+      p.classList.toggle('active', p.dataset.screen === screen);
+    });
+    trans.classList.remove('flash');
+  }, 160);
+}
+
+document.querySelectorAll('.snav-pill').forEach(p => {
+  p.addEventListener('click', () => goTo(p.dataset.screen));
+});
+</script>
+</body>
+</html>
